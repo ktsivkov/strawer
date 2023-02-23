@@ -1,22 +1,31 @@
 package strawer
 
-type Type string
+import (
+	"github.com/ktsivkov/strawer/async"
+	"github.com/ktsivkov/strawer/sync"
+)
 
-type Event struct {
-	Type Type
-	Data any
+type Worker interface {
+	Sync() sync.Worker
+	Async() async.Worker
 }
 
-type SyncHandler interface {
-	Handle(e Event)
+func New() Worker {
+	return &worker{
+		sync:  sync.New(),
+		async: async.New(),
+	}
 }
 
-type AsyncHandler interface {
-	Handle(e AsyncEvent)
+type worker struct {
+	sync  sync.Worker
+	async async.Worker
 }
 
-type AsyncEvent struct {
-	Type    Type
-	Data    any
-	Channel chan any
+func (e *worker) Sync() sync.Worker {
+	return e.sync
+}
+
+func (e *worker) Async() async.Worker {
+	return e.async
 }
