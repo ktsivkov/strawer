@@ -7,6 +7,7 @@ import (
 
 func TestWorker_Dispatch(t *testing.T) {
 	t.Run("Single subscriber", func(t *testing.T) {
+		t.Parallel()
 		s := New()
 
 		h := &testHandler{
@@ -33,6 +34,7 @@ func TestWorker_Dispatch(t *testing.T) {
 	})
 
 	t.Run("Multiple subscribers", func(t *testing.T) {
+		t.Parallel()
 		s := New()
 
 		h1 := &testHandler{
@@ -66,6 +68,7 @@ func TestWorker_Dispatch(t *testing.T) {
 	})
 
 	t.Run("No subscribers", func(t *testing.T) {
+		t.Parallel()
 		s := New()
 
 		t1 := Type("test")
@@ -88,6 +91,56 @@ func TestWorker_Dispatch(t *testing.T) {
 
 		if hc != 0 {
 			t.Errorf("Dispatch was expected to call exactly 0 handlers, got %d.", hc)
+		}
+	})
+}
+
+func BenchmarkWorker_Dispatch(b *testing.B) {
+	b.Run("Dispatch with a handler", func(b *testing.B) {
+		s := New()
+		t1 := Type("test")
+		h1 := &testHandler{
+			called: false,
+		}
+
+		s.Subscribe(h1, []Type{t1})
+
+		for n := 0; n < b.N; n++ {
+			_, _ = s.Dispatch(Event{
+				Type: t1,
+				Data: nil,
+			})
+		}
+	})
+
+	b.Run("Dispatch with two handlers", func(b *testing.B) {
+		s := New()
+		t1 := Type("test")
+
+		s.Subscribe(&testHandler{
+			called: false,
+		}, []Type{t1})
+		s.Subscribe(&testHandler{
+			called: false,
+		}, []Type{t1})
+
+		for n := 0; n < b.N; n++ {
+			_, _ = s.Dispatch(Event{
+				Type: t1,
+				Data: nil,
+			})
+		}
+	})
+
+	b.Run("Dispatch with no handlers", func(b *testing.B) {
+		s := New()
+		t1 := Type("test")
+
+		for n := 0; n < b.N; n++ {
+			_, _ = s.Dispatch(Event{
+				Type: t1,
+				Data: nil,
+			})
 		}
 	})
 }
